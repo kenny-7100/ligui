@@ -1,121 +1,66 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { createEthereumKeyPair, type EthereumKeyPair } from './crypto/ethereum'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [keyPair, setKeyPair] = useState<EthereumKeyPair | null>(null)
+  const [error, setError] = useState('')
+
+  const generateKeyPair = () => {
+    try {
+      setKeyPair(createEthereumKeyPair())
+      setError('')
+    } catch {
+      setError('生成失败，请确认浏览器支持安全随机数后重试。')
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="workspace">
+      <header className="page-header">
+        <span className="eyebrow">ETHEREUM</span>
+        <h1>密钥与地址测试</h1>
+      </header>
+
+      <section className="generator" aria-labelledby="generator-title">
+        <h2 id="generator-title">算法输出</h2>
+
+        <div className="field-group">
+          <label htmlFor="private-key">私钥</label>
+          <div className="input-action">
+            <input
+              id="private-key"
+              type="text"
+              value={keyPair?.privateKey ?? ''}
+              placeholder="点击右侧按钮生成"
+              readOnly
+              spellCheck={false}
+              autoComplete="off"
+            />
+            <button type="button" onClick={generateKeyPair}>
+              随机生成
+            </button>
+          </div>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+
+        <div className="field-group">
+          <label htmlFor="ethereum-address">ETH 地址</label>
+          <input
+            id="ethereum-address"
+            type="text"
+            value={keyPair?.address ?? ''}
+            placeholder="生成私钥后自动计算"
+            readOnly
+            spellCheck={false}
+            autoComplete="off"
+          />
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        {error && <p className="error" role="alert">{error}</p>}
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <p className="notice">仅用于算法测试，请勿向测试地址转入资产。</p>
+    </main>
   )
 }
 
