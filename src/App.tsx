@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { benchmarkAddresses } from './crypto/benchmark'
+import { benchmarkAddresses, benchmarkForDuration } from './crypto/benchmark'
 import type { BenchmarkResult } from './crypto/benchmark.types'
 import { createEthereumKeyPair, type EthereumKeyPair } from './crypto/ethereum'
 import './App.css'
@@ -25,6 +25,23 @@ function App() {
 
     try {
       setBenchmark(await benchmarkAddresses(10_000))
+    } catch (benchmarkError) {
+      setError(
+        benchmarkError instanceof Error
+          ? benchmarkError.message
+          : '性能测试失败，请重试。',
+      )
+    } finally {
+      setIsBenchmarking(false)
+    }
+  }
+
+  const runTimedBenchmark = async () => {
+    setIsBenchmarking(true)
+    setError('')
+
+    try {
+      setBenchmark(await benchmarkForDuration(5_000))
     } catch (benchmarkError) {
       setError(
         benchmarkError instanceof Error
@@ -86,9 +103,14 @@ function App() {
             <span className="section-kicker">WASM + WEB WORKER</span>
             <h2 id="benchmark-title">并行生成基准</h2>
           </div>
-          <button type="button" onClick={runBenchmark} disabled={isBenchmarking}>
-            {isBenchmarking ? '计算中…' : '生成 10,000 个地址'}
-          </button>
+          <div className="benchmark-actions">
+            <button type="button" onClick={runBenchmark} disabled={isBenchmarking}>
+              {isBenchmarking ? '计算中…' : '生成 10,000 个'}
+            </button>
+            <button type="button" onClick={runTimedBenchmark} disabled={isBenchmarking}>
+              持续测试 5 秒
+            </button>
+          </div>
         </div>
 
         <dl className="metrics" aria-live="polite">
@@ -97,8 +119,8 @@ function App() {
             <dd>{benchmark ? `${benchmark.elapsedMs.toFixed(1)} ms` : '—'}</dd>
           </div>
           <div>
-            <dt>核心计算耗时</dt>
-            <dd>{benchmark ? `${benchmark.computeMs.toFixed(1)} ms` : '—'}</dd>
+            <dt>WASM 初始化</dt>
+            <dd>{benchmark ? `${benchmark.initializationMs.toFixed(1)} ms` : '—'}</dd>
           </div>
           <div>
             <dt>生成速度</dt>
@@ -109,8 +131,12 @@ function App() {
             </dd>
           </div>
           <div>
-            <dt>并行 Worker</dt>
-            <dd>{benchmark ? benchmark.workerCount : '—'}</dd>
+            <dt>生成数量 / Worker</dt>
+            <dd>
+              {benchmark
+                ? `${benchmark.count.toLocaleString()} / ${benchmark.workerCount}`
+                : '—'}
+            </dd>
           </div>
         </dl>
 

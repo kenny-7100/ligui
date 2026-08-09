@@ -67,6 +67,22 @@ h1 {
   letter-spacing: 0;
 }
 
+.benchmark-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.benchmark-actions button + button {
+  color: var(--text-strong);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.benchmark-actions button + button:hover {
+  background: var(--input-bg);
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -209,6 +225,11 @@ button:disabled {
   .section-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .benchmark-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metrics {

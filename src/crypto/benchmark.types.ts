@@ -1,7 +1,10 @@
 export type BenchmarkRequest = {
   type: 'benchmark'
-  count: number
+  count?: number
+  durationMs?: number
 }
+
+export type WorkerReady = { type: 'ready' }
 
 export type BenchmarkSuccess = {
   type: 'result'
@@ -17,12 +20,14 @@ export type BenchmarkFailure = {
 }
 
 export type BenchmarkResponse = BenchmarkSuccess | BenchmarkFailure
+export type WorkerResponse = WorkerReady | BenchmarkResponse
 
 export type BenchmarkResult = {
   count: number
   workerCount: number
   elapsedMs: number
-  computeMs: number
+  initializationMs: number
+  mode: 'fixed' | 'timed'
   addressesPerSecond: number
   samplePrivateKey: string
   sampleAddress: string

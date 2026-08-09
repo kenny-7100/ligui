@@ -1,17 +1,15 @@
 /// <reference lib="webworker" />
 
-import {
-  keccak256,
-  secp256k1Expand,
-  secp256k1FromSeed,
-  waitReady,
-} from '@polkadot/wasm-crypto'
-import type {
-  BenchmarkRequest,
-  BenchmarkResponse,
-} from './benchmark.types'
+import initWasm, { generate_batch } from '../wasm-address/pkg/address_benchmark_wasm.js'
+import type { BenchmarkRequest, WorkerResponse } from './benchmark.types'
 
 const worker = self as DedicatedWorkerGlobalScope
+const TIMED_BATCH_SIZE = 256
+const RESULT_PRIVATE_KEY_OFFSET = 0
+const RESULT_ADDRESS_OFFSET = 32
+const RESULT_NEXT_KEY_OFFSET = 52
+
+let nextPrivateKey = crypto.getRandomValues(new Uint8Array(32))
 
 function bytesToHex(bytes: Uint8Array): string {
   let result = ''
@@ -23,49 +21,66 @@ function bytesToHex(bytes: Uint8Array): string {
   return result
 }
 
-function createAddress(privateKey: Uint8Array): string {
-  const keyPair = secp256k1FromSeed(privateKey)
-  const compressedPublicKey = keyPair.subarray(32)
-  const publicKey = secp256k1Expand(compressedPublicKey)
-  const hash = keccak256(publicKey.subarray(1))
+function runBatch(count: number) {
+  const result = generate_batch(nextPrivateKey, count)
+  nextPrivateKey = result.slice(RESULT_NEXT_KEY_OFFSET)
 
-  return `0x${bytesToHex(hash.subarray(12))}`
+  return result
 }
 
-worker.onmessage = async (event: MessageEvent<BenchmarkRequest>) => {
+async function initialize() {
+  try {
+    await initWasm()
+    const response: WorkerResponse = { type: 'ready' }
+    worker.postMessage(response)
+  } catch (error) {
+    const response: WorkerResponse = {
+      type: 'error',
+      message: error instanceof Error ? error.message : 'WASM 初始化失败',
+    }
+    worker.postMessage(response)
+  }
+}
+
+worker.onmessage = (event: MessageEvent<BenchmarkRequest>) => {
   if (event.data.type !== 'benchmark') return
 
   try {
-    const ready = await waitReady()
-
-    if (!ready) {
-      throw new Error('WASM 初始化失败')
-    }
-
-    const privateKey = new Uint8Array(32)
-    let address = ''
     const startedAt = performance.now()
+    let count = 0
+    let result: Uint8Array
 
-    for (let index = 0; index < event.data.count; index += 1) {
-      crypto.getRandomValues(privateKey)
-      address = createAddress(privateKey)
+    if (event.data.durationMs !== undefined) {
+      const deadline = startedAt + event.data.durationMs
+      result = runBatch(TIMED_BATCH_SIZE)
+      count += TIMED_BATCH_SIZE
+
+      while (performance.now() < deadline) {
+        result = runBatch(TIMED_BATCH_SIZE)
+        count += TIMED_BATCH_SIZE
+      }
+    } else {
+      count = event.data.count ?? 0
+      result = runBatch(count)
     }
 
-    const response: BenchmarkResponse = {
+    const response: WorkerResponse = {
       type: 'result',
-      count: event.data.count,
+      count,
       computeMs: performance.now() - startedAt,
-      privateKey: `0x${bytesToHex(privateKey)}`,
-      address,
+      privateKey: `0x${bytesToHex(result.slice(RESULT_PRIVATE_KEY_OFFSET, RESULT_ADDRESS_OFFSET))}`,
+      address: `0x${bytesToHex(result.slice(RESULT_ADDRESS_OFFSET, RESULT_NEXT_KEY_OFFSET))}`,
     }
     worker.postMessage(response)
   } catch (error) {
-    const response: BenchmarkResponse = {
+    const response: WorkerResponse = {
       type: 'error',
       message: error instanceof Error ? error.message : 'Worker 计算失败',
     }
     worker.postMessage(response)
   }
 }
+
+void initialize()
 
 export {}

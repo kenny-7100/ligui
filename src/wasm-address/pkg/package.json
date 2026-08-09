@@ -1,0 +1,15 @@
+{
+  "name": "address-benchmark-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "address_benchmark_wasm_bg.wasm",
+    "address_benchmark_wasm.js",
+    "address_benchmark_wasm.d.ts"
+  ],
+  "main": "address_benchmark_wasm.js",
+  "types": "address_benchmark_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
