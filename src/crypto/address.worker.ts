@@ -4,7 +4,7 @@ import initWasm, { generate_batch } from '../wasm-address/pkg/address_benchmark_
 import type { BenchmarkRequest, WorkerResponse } from './benchmark.types'
 
 const worker = self as DedicatedWorkerGlobalScope
-const TIMED_BATCH_SIZE = 256
+const TIMED_BATCH_SIZE = 16_384
 const RESULT_PRIVATE_KEY_OFFSET = 0
 const RESULT_ADDRESS_OFFSET = 32
 const RESULT_NEXT_KEY_OFFSET = 52

@@ -1,9 +1,13 @@
-use k256::{EncodedPoint, SecretKey, elliptic_curve::sec1::ToEncodedPoint};
+use k256::{
+    AffinePoint, ProjectivePoint, SecretKey,
+    elliptic_curve::{BatchNormalize, sec1::ToEncodedPoint},
+};
 use sha3::{Digest, Keccak256};
 use wasm_bindgen::prelude::*;
 
 const PRIVATE_KEY_LENGTH: usize = 32;
 const ADDRESS_LENGTH: usize = 20;
+const MAX_POINT_BATCH_SIZE: usize = 16_384;
 
 fn increment_private_key(private_key: &mut [u8; PRIVATE_KEY_LENGTH]) {
     loop {
@@ -39,18 +43,36 @@ pub fn generate_batch(start_private_key: &[u8], count: u32) -> Result<Vec<u8>, J
         increment_private_key(&mut private_key);
     }
 
+    let secret_key = SecretKey::from_slice(&private_key)
+        .map_err(|_| JsValue::from_str("Invalid secp256k1 private key"))?;
+    let mut public_key = ProjectivePoint::from(secret_key.public_key());
+    let mut projective_points = Vec::with_capacity((count as usize).min(MAX_POINT_BATCH_SIZE));
     let mut last_private_key = private_key;
     let mut last_address = [0_u8; ADDRESS_LENGTH];
+    let mut remaining = count as usize;
 
-    for _ in 0..count {
-        let secret_key = SecretKey::from_slice(&private_key)
-            .map_err(|_| JsValue::from_str("Invalid secp256k1 private key"))?;
-        let public_key: EncodedPoint = secret_key.public_key().to_encoded_point(false);
-        let hash = Keccak256::digest(&public_key.as_bytes()[1..]);
+    while remaining > 0 {
+        let batch_len = remaining.min(MAX_POINT_BATCH_SIZE);
+        projective_points.clear();
 
-        last_private_key.copy_from_slice(&private_key);
-        last_address.copy_from_slice(&hash[12..]);
-        increment_private_key(&mut private_key);
+        for _ in 0..batch_len {
+            projective_points.push(public_key);
+            public_key += AffinePoint::GENERATOR;
+            last_private_key.copy_from_slice(&private_key);
+            increment_private_key(&mut private_key);
+        }
+
+        let affine_points = <ProjectivePoint as BatchNormalize<[ProjectivePoint]>>::batch_normalize(
+            projective_points.as_slice(),
+        );
+
+        for point in &affine_points {
+            let encoded_point = point.to_encoded_point(false);
+            let hash = Keccak256::digest(&encoded_point.as_bytes()[1..]);
+            last_address.copy_from_slice(&hash[12..]);
+        }
+
+        remaining -= batch_len;
     }
 
     let mut result = Vec::with_capacity(PRIVATE_KEY_LENGTH * 2 + ADDRESS_LENGTH);
