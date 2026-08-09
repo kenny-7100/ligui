@@ -25,7 +25,8 @@ h1 {
   letter-spacing: 0;
 }
 
-.generator {
+.generator,
+.benchmark {
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -33,11 +34,72 @@ h1 {
   box-shadow: 0 12px 32px rgba(24, 28, 38, 0.06);
 }
 
-.generator h2 {
+.generator h2,
+.benchmark h2 {
   margin: 0 0 28px;
   color: var(--text-strong);
   font-size: 17px;
   letter-spacing: 0;
+}
+
+.benchmark {
+  margin-top: 20px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
+.section-kicker {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+}
+
+.metrics > div {
+  min-width: 0;
+  padding: 18px;
+}
+
+.metrics > div + div {
+  border-left: 1px solid var(--border);
+}
+
+.metrics dt {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.metrics dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-strong);
+  font: 600 15px/1.4 var(--mono);
+}
+
+.sample-output {
+  margin-top: 24px;
 }
 
 .field-group + .field-group {
@@ -109,6 +171,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .error {
   margin: 18px 0 0;
   color: var(--error);
@@ -133,6 +200,31 @@ button:focus-visible {
 
   .generator {
     padding: 22px 18px;
+  }
+
+  .benchmark {
+    padding: 22px 18px;
+  }
+
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrics > div + div {
+    border-left: 0;
+  }
+
+  .metrics > div:nth-child(even) {
+    border-left: 1px solid var(--border);
+  }
+
+  .metrics > div:nth-child(n + 3) {
+    border-top: 1px solid var(--border);
   }
 
   .input-action {
